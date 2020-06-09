@@ -13,12 +13,13 @@ def Calib(theta, *args):
     x = Legendre_coeff(PMT_pos, cut)
     # Poisson regression
     L = - np.sum(np.sum(np.transpose(y)*np.transpose(np.dot(x, theta)) \
-        - np.transpose(np.exp(np.dot(x, theta))))) + np.exp(np.sum(np.abs(theta))) \
-        + np.sum(np.abs(theta)) # L1 
+        - np.transpose(np.exp(np.dot(x, theta)))))# + np.exp(np.sum(np.abs(theta))) \
+        #+ np.sum(np.abs(theta)) # L1 
     return L
 
 def Legendre_coeff(PMT_pos, cut):
-    vertex = np.array([0,2,10])
+    # vertex = np.array([0,2,10])
+    vertex = np.array([0,0,1])
     cos_theta = np.sum(vertex*PMT_pos,axis=1)\
         /np.sqrt(np.sum(vertex**2)*np.sum(PMT_pos**2,axis=1))
     # accurancy and nan value
@@ -88,7 +89,7 @@ def hessian(x, *args):
 def main_Calib(radius, path, fout):
     
     #filename = '/mnt/stage/douwei/Simulation/1t_root/1.5MeV_015/1t_' + radius + '.h5'
-    filename = path + '1t_' + radius + '.h5'
+    filename = path + radius + '/wave.h5'
     # read files by table
     h1 = tables.open_file(filename,'r')
     print(filename)
@@ -152,7 +153,8 @@ def main_Calib(radius, path, fout):
             out.create_dataset('chi' + str(cut), data = chi2sq)
 
 ## read data from calib files
-f = open(r'./PMT_1t.txt')
+#f = open(r'./PMT_1t.txt')
+f = open(sys.argv[4])
 line = f.readline()
 data_list = []
 while line:
@@ -160,7 +162,7 @@ while line:
     data_list.append(num)
     line = f.readline()
 f.close()
-PMT_pos = np.array(data_list)
+PMT_pos = np.array(data_list)[:,0:3]
 
 #cut = 6 # Legend order
 main_Calib(sys.argv[1],sys.argv[2], sys.argv[3])

@@ -13,6 +13,7 @@ def even_func(x, a, b, c, d, e):
 def findfile(path, radius, order):
     data = []
     filename = path + 'file_' + radius + '.h5'
+    print(filename)
     h = tables.open_file(filename,'r')
     
     coeff = 'coeff' + str(order)
@@ -37,8 +38,9 @@ def findfile(path, radius, order):
     return data
 
 def main(path, upperlimit, lowerlimit, order_max):
-    
-    ra = np.arange(upperlimit + 1e-5, lowerlimit, -0.01)
+    delta = 1000
+    # ra = np.arange(upperlimit + 1e-5, lowerlimit, -delta)
+    ra = np.arange(upperlimit, lowerlimit-1, -delta)
     for order in np.arange(5, order_max, 5):
         coeff = []
         mean = []
@@ -46,8 +48,10 @@ def main(path, upperlimit, lowerlimit, order_max):
         rate = []
         hinv = []
         chi = []
+        print(ra)
         for radius in ra:
-            str_radius = '%+.2f' % radius
+            # str_radius = '%+.2f' % radius
+            str_radius = '%d' % radius
             k = findfile(path, str_radius, order)
             k.append(np.array(radius))
             coeff = np.hstack((coeff,np.array(k[0][0])))
@@ -57,7 +61,7 @@ def main(path, upperlimit, lowerlimit, order_max):
             #hinv = np.hstack((hinv,np.array(k[0][4])))
             chi = np.hstack((chi,np.array(k[0][5])))
 
-        coeff = np.reshape(coeff,(-1,np.size(ra)),order='F')
+        coeff = np.reshape(coeff,(-1,np.size(ra)),order='F')#(order, numOfPmt)
         mean = np.reshape(mean,(-1,np.size(ra)),order='F')
         predict = np.reshape(predict,(-1,np.size(ra)),order='F')
         chi = np.reshape(chi,(-1,np.size(ra)),order='F')
@@ -73,8 +77,8 @@ def main(path, upperlimit, lowerlimit, order_max):
         k2 = np.zeros((N_max+1, fit_max))
         for i in np.arange(np.size(coeff[:,0])):
             data = np.nan_to_num(coeff[i,:])
-            x = ra/0.65
-
+            #x = ra/0.65
+            x = ra/10000
             index1 = (x<=bd_1) & (x>=-bd_1) & (x!=0)
 
             if(i%2==1):
