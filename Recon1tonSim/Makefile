@@ -1,14 +1,19 @@
 .PHONY: all
 
-path:=/mnt/stage/douwei/Simulation/5kt_root/2MeV/
-save:=result_pe
-sim:=$(wildcard $(path)*.root)
-dst:=$(sim:$(path)%.root=$(save)/%.h5)
+order:=10
+E:=2.0MeV
+method:=sphere
+path:=/home/greatofdream/protondecay/src/data/simulate/truth/
+save:=/home/greatofdream/protondecay/src/data/recon/
+sim:=$(wildcard $(path)*/detsim_user.root)
+dst:=$(sim:$(path)%/detsim_user.root=$(save)%/$(method)/recon.h5)
+geometry:=/home/greatofdream/protondecay/src/data/geometry/PMTPos_Acrylic_with_chimney.csv
+
 all:$(dst)
 
-$(save)/%.h5:$(path)%.root
-	mkdir -p $(save)
-	python3 Recon.py $^ $@ > $@.log
+$(save)%/$(method)/recon.h5:$(path)%/detsim_user.root
+	mkdir -p $(dir $@)
+	python3 Recon.py $^ $@ $(order) $(geometry)> $@.log
 
 # Delete partial files when the processes are killed.
 .DELETE_ON_ERROR:
