@@ -8,11 +8,16 @@ from scipy.optimize import curve_fit
 from matplotlib.backends.backend_pdf import PdfPages
 import argparse 
 psr = argparse.ArgumentParser()
-psr.add_argument("-o", dest='opt', help="output")
 psr.add_argument('ipt', help="input")
+psr.add_argument("-o", dest='opt', help="output")
+psr.add_argument("-p", dest='pe', nargs='+', help="pe")
+psr.add_argument("-t", dest='time', nargs='+', help="time")
+psr.add_argument("-r", dest='radius', nargs='+', help="radius")
 args = psr.parse_args()
 
 order = args.ipt
+peFiles = args.pe
+timeFiles = args.time
 
 pdf = PdfPages(args.opt)
 
@@ -25,7 +30,7 @@ def even_func(x, a, b, c, d, e):
 # load data
 def LoadDataPE(path, radius, order):
     data = []
-    filename = path + 'file_' + radius + '.h5'
+    filename = path
     h = tables.open_file(filename,'r')
 
     coeff = 'coeff' + str(order)
@@ -35,15 +40,15 @@ def LoadDataPE(path, radius, order):
     hinv = 'hinv' + str(order)
     chi = 'chi' + str(order)
     
-    a = eval('np.array(h.root.'+ coeff + '[:])')
-    b = eval('np.array(h.root.'+ mean + '[:])')
-    c = eval('np.array(h.root.'+ predict + '[:])')
+    a = np.array(h.root[coeff][:])
+    b = np.array(h.root[mean][:])
+    c = np.array(h.root[predict][:])
     try:
-        d = eval('h.root.'+ rate + '[:])')
+        d = np.array(h.root[rate][:])
     except:
         d = np.array(0)
-    e = eval('np.array(h.root.'+ hinv + '[:])')
-    f = eval('np.array(h.root.'+ chi + '[:])')
+    e = np.array(h.root[hinv][:])
+    f = np.array(h.root[chi][:])
     
     data.append(np.array(np.array((a,b,c,d,e,f))))
     return data
@@ -51,12 +56,12 @@ def LoadDataPE(path, radius, order):
 
 def LoadFileTime(path, radius, order):
     data = []
-    filename = path + 'file_' + radius + '.h5'
+    filename = path
     h = tables.open_file(filename,'r')
 
     coeff = 'coeff' + str(order)
     
-    a = eval('np.array(h.root.'+ coeff + '[:])')
+    a = np.array(h.root[coeff][:])
 
     data.append(np.array((np.array(a))))
     return data
@@ -65,7 +70,8 @@ def LoadFileTime(path, radius, order):
 path = '../coeff_pe_1t_339MeV/'
 #ra = np.arange(+0.651, -0.65, -0.01)
 #ra = np.arange(16000, -16001, -1000)
-ra = np.append(np.arange(16000,6001,-1000),(np.arange(-5000,-16001,-1000)))
+#ra = np.append(np.arange(16000,6001,-1000),(np.arange(-5000,-16001,-1000)))
+ra = np.array([int(i) for i in args.radius])
 sigmaFactor = np.array([ 1/10 if i==-14000 or i==16000 else 1/np.sqrt(5) for i in ra])
 detRadius = 17700
 
@@ -76,11 +82,11 @@ rate = []
 hinv = []
 chi = []
 sigma = []
-for radius in ra:
+for radius,filename in zip(ra, peFiles):
     #str_radius = '%+.2f' % radius
     str_radius = '{}'.format(radius)
     
-    k = LoadDataPE(path, str_radius, order)
+    k = LoadDataPE(filename, str_radius, order)
     k.append(np.array(radius))
     coeff_pe = np.hstack((coeff_pe, np.array(k[0][0])))
     mean = np.hstack((mean, np.array(k[0][1])))
@@ -162,11 +168,11 @@ order = 10
 coeff_time = []
 path = '../coeff_time_1t_339MeV/'
 
-for radius in ra:
+for radius,filename in zip(ra,timeFiles):
     # str_radius = '%+.2f' % radius
     str_radius = '{}'.format(radius)
     
-    k = LoadFileTime(path, str_radius, order)
+    k = LoadFileTime(filename, str_radius, order)
     k.append(np.array(radius))
     coeff_time = np.hstack((coeff_time,np.array(k[0])))
 
