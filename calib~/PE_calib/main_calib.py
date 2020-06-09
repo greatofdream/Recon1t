@@ -88,7 +88,8 @@ def hessian(x, *args):
 def main_Calib(radius, path, fout):
     
     #filename = '/mnt/stage/douwei/Simulation/1t_root/1.5MeV_015/1t_' + radius + '.h5'
-    filename = path + '1t_' + radius + '.h5'
+    filename = path + radius + 'wave.h5'
+    print(filename)
     # read files by table
     h1 = tables.open_file(filename,'r')
     print(filename)
@@ -134,7 +135,7 @@ def main_Calib(radius, path, fout):
             x = Legendre_coeff(PMT_pos, cut)
             mean = np.mean(total_pe, axis=1)
             args = (total_pe, PMT_pos, cut)
-            predict = [];
+            predict = []
             predict.append(np.exp(np.dot(x, result.x)))
             # predict.append(mean)
             predict = np.transpose(predict)
@@ -152,7 +153,7 @@ def main_Calib(radius, path, fout):
             out.create_dataset('chi' + str(cut), data = chi2sq)
 
 ## read data from calib files
-f = open(r'./PMT_1t.txt')
+f = open(sys.argv[4])
 line = f.readline()
 data_list = []
 while line:
