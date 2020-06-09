@@ -37,4 +37,7 @@ coeff_pe:$(src_pe)
 coeff_time:$(src_time)
 	python3 Time_calib/Gather.py ./$(save_time)/ $(upper_o) $(lower_o) $(lower_i) $(order)
 
+# Delete partial files when the processes are killed.
+.DELETE_ON_ERROR:
+# Keep intermediate files around
 .SECONDARY:
