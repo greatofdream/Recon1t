@@ -37,7 +37,8 @@ def quantile_check(y, T_i, tau, ts):
     return R
 
 def Legendre_coeff(PMT_pos, cut):
-    vertex = np.array([0,0,2,10])
+    # vertex = np.array([0,0,2,10])
+    vertex = np.array([0,0,0,1])
     cos_theta = np.sum(vertex[1:4]*PMT_pos,axis=1) \
         /np.sqrt(np.sum(vertex[1:4]**2)*np.sum(PMT_pos**2,axis=1))
     # accurancy and nan value
@@ -106,7 +107,7 @@ def hessian(x, *args):
 
 def main_Calib(radius, path, fout):
     #filename = '/mnt/stage/douwei/Simulation/1t_root/1.5MeV_015/1t_' + radius + '.h5'
-    filename = path + '1t_' + radius + '.h5'
+    filename = path + radius + '/wave.h5'
     # read files by table
     h1 = tables.open_file(filename,'r')
     print(filename)
@@ -114,9 +115,11 @@ def main_Calib(radius, path, fout):
     EventID = truthtable[:]['EventID']
     ChannelID = truthtable[:]['ChannelID']
     PETime = truthtable[:]['PETime']
-    photonTime = truthtable[:]['photonTime']
+    # photonTime = truthtable[:]['photonTime']
+    '''
     PulseTime = truthtable[:]['PulseTime']
     dETime = truthtable[:]['dETime']
+    '''
     h1.close()
     
     # read file series
@@ -131,14 +134,14 @@ def main_Calib(radius, path, fout):
             EventID_tmp = truthtable[:]['EventID']
             ChannelID_tmp = truthtable[:]['ChannelID']
             PETime_tmp = truthtable[:]['PETime']
-            photonTime_tmp = truthtable[:]['photonTime']
+            # photonTime_tmp = truthtable[:]['photonTime']
             PulseTime_tmp = truthtable[:]['PulseTime']
             dETime_tmp = truthtable[:]['dETime']
             
             EventID = np.hstack((EventID, EventID_tmp))
             ChannelID = np.hstack((ChannelID, ChannelID_tmp))
             PETime = np.hstack((PETime, PETime_tmp))
-            photonTime = np.hstack((photonTime, photonTime_tmp))
+            # photonTime = np.hstack((photonTime, photonTime_tmp))
             PulseTime = np.hstack((PulseTime, PulseTime_tmp))
             dETime = np.hstack((dETime, dETime_tmp))
             
@@ -148,7 +151,8 @@ def main_Calib(radius, path, fout):
     
     total_pe = np.zeros((np.size(PMT_pos[:,0]),max(EventID)))
     
-    flight_time = PulseTime - dETime
+    # flight_time = PulseTime - dETime
+    flight_time = PETime
     ChannelID = ChannelID[~(flight_time==0)]
     flight_time = flight_time[~(flight_time==0)]
 
@@ -170,7 +174,7 @@ def main_Calib(radius, path, fout):
             out.create_dataset('ch' + str(cut), data = ChannelID)
             out.create_dataset('predict' + str(cut), data = predict)
 
-f = open(r'./PMT_1t.txt')
+f = open(sys.argv[4])
 line = f.readline()
 data_list = []
 while line:
@@ -178,6 +182,6 @@ while line:
     data_list.append(num)
     line = f.readline()
 f.close()
-PMT_pos = np.array(data_list)
+PMT_pos = np.array(data_list)[:,0:3]
 
 main_Calib(sys.argv[1],sys.argv[2], sys.argv[3])
