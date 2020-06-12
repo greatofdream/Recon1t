@@ -162,7 +162,7 @@ while line:
     data_list.append(num)
     line = f.readline()
 f.close()
-PMT_pos = np.array(data_list)[:,0:3]
+PMT_pos = np.array(data_list)[:,1:4]
 
 #cut = 6 # Legend order
 main_Calib(sys.argv[1],sys.argv[2], sys.argv[3])
