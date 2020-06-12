@@ -1,7 +1,9 @@
 .PHONY: all
 export OMP_NUM_THREADS=2
 E:=339MeV
-path:=/srv/greatofdream/simnew/newK+/zaxis/E_$(E)/
+particle:=e-
+#path:=/srv/greatofdream/simnew/newK+/zaxis/E_$(E)/
+path:=/srv/greatofdream/simnew/$(particle)/zaxis/E_$(E)/
 upper:=+17000
 lower:=-17000
 radius:=$(shell seq  $(upper) -1000 $(lower))
