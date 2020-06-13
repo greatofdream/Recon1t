@@ -19,7 +19,6 @@ order = args.ipt
 peFiles = args.pe
 timeFiles = args.time
 
-pdf = PdfPages(args.opt)
 
 # fit odd order, even order is 0
 def odd_func(x, a, b, c, d, e):
@@ -95,14 +94,20 @@ for radius,filename in zip(ra, peFiles):
     #hinv = np.hstack((hinv,np.array(k[0][4])))
     sigma = np.hstack((sigma,np.sqrt(-np.diagonal(k[0][4]))))
     chi = np.hstack((chi,np.array(k[0][5])))
-
+#print('coeff_pe value')
+#print(coeff_pe)
 coeff_pe = np.reshape(coeff_pe,(-1,np.size(ra)),order='F')
+#print(coeff_pe)
+
 mean = np.reshape(mean,(-1,np.size(ra)),order='F')
 predict = np.reshape(predict,(-1,np.size(ra)),order='F')
 chi = np.reshape(chi,(-1,np.size(ra)),order='F')
 sigma = np.reshape(sigma, (-1,np.size(ra)),order='F')
 #sigma = coeff_pe*sigmaFactor
 
+
+
+pdf = PdfPages(args.opt)
 #ra = np.arange(+0.651, -0.65, -0.01)
 for i in np.arange(np.size(coeff_pe[:,0])):
     plt.figure(dpi=150)
@@ -239,4 +244,5 @@ for i in np.arange(np.size(coeff_time[:,0])):
     #plt.show()
     plt.close()
 
+print('finish plot')
 pdf.close()
