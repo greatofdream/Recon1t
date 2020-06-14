@@ -90,17 +90,17 @@ def hessian(x, *args):
                 delta2[j] = k
 
 
-                L1 = - Calib(x + delta1, *(total_pe, PMT_pos, cut))
-                L2 = - Calib(x - delta1, *(total_pe, PMT_pos, cut))
-                L3 = - Calib(x + delta2, *(total_pe, PMT_pos, cut))
-                L4 = - Calib(x - delta2, *(total_pe, PMT_pos, cut))
+                L1 = - Calib(x + delta1, *(ChannelID, PETime, PMT_pos, cut))
+                L2 = - Calib(x - delta1, *(ChannelID, PETime, PMT_pos, cut))
+                L3 = - Calib(x + delta2, *(ChannelID, PETime, PMT_pos, cut))
+                L4 = - Calib(x - delta2, *(ChannelID, PETime, PMT_pos, cut))
                 H[i,j] = (L1+L2-L3-L4)/(4*h*k)
             else:
                 delta = np.zeros(len(x))
                 delta[i] = h
-                L1 = - Calib(x + delta, *(total_pe, PMT_pos, cut))
-                L2 = - Calib(x - delta, *(total_pe, PMT_pos, cut))
-                L3 = - Calib(x, *(total_pe, PMT_pos, cut))
+                L1 = - Calib(x + delta, *(ChannelID, PETime, PMT_pos, cut))
+                L2 = - Calib(x - delta, *(ChannelID, PETime, PMT_pos, cut))
+                L3 = - Calib(x, *(ChannelID, PETime, PMT_pos, cut))
                 H[i,j] = (L1+L2-2*L3)/h**2                
     return H
 
@@ -163,8 +163,10 @@ def main_Calib(radius, path, fout):
             theta0[0] = np.mean(flight_time) - 26
             result = minimize(Calib,theta0, method='SLSQP',args = (ChannelID, flight_time, PMT_pos, cut))  
             record = np.array(result.x, dtype=float)
+            hess = hessian(result.x, *(ChannelID, flight_time, PMT_pos, cut))
+            hess_inv = np.linalg.pinv(np.matrix(hess))
             print(result.x)
-
+            
             x = Legendre_coeff(PMT_pos, cut)
             predict = [];
             predict.append(np.dot(x, result.x))
@@ -173,7 +175,7 @@ def main_Calib(radius, path, fout):
             out.create_dataset('ft' + str(cut), data = flight_time)
             out.create_dataset('ch' + str(cut), data = ChannelID)
             out.create_dataset('predict' + str(cut), data = predict)
-
+            out.create_dataset('hinv'+str(cut), data=hess_inv)
 f = open(sys.argv[4])
 line = f.readline()
 data_list = []

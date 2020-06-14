@@ -59,11 +59,12 @@ def LoadFileTime(path, radius, order):
     h = tables.open_file(filename,'r')
 
     coeff = 'coeff' + str(order)
-    
-    a = np.array(h.root[coeff][:])
+    hinv = 'hinv' + str(order)
 
-    data.append(np.array((np.array(a))))
-    return data
+    a = np.array(h.root[coeff][:])
+    e = np.array(h.root[hinv][:])
+    #data.append(np.array(np.array((a,e))))
+    return (a, e)
 
     ## gather the data
 path = '../coeff_pe_1t_339MeV/'
@@ -177,12 +178,13 @@ for radius,filename in zip(ra,timeFiles):
     # str_radius = '%+.2f' % radius
     str_radius = '{}'.format(radius)
     
-    k = LoadFileTime(filename, str_radius, order)
-    k.append(np.array(radius))
-    coeff_time = np.hstack((coeff_time,np.array(k[0])))
+    a, e = LoadFileTime(filename, str_radius, order)
+    #k.append(np.array(radius))
+    hinv = np.hstack((hinv,np.sqrt(-np.diagonal(e))))
+    coeff_time = np.hstack((coeff_time,np.array(a)))
 
 coeff_time = np.reshape(coeff_time,(-1,np.size(ra)),order='F')
-
+hinv = np.reshape(hinv, (-1,np.size(ra)),order='F')
 # ra = np.arange(+0.651, -0.65, -0.01)
 for i in np.arange(np.size(coeff_time[:,0])):
     
@@ -229,7 +231,8 @@ for i in np.arange(np.size(coeff_time[:,0])):
     #x_total = np.hstack((x[index1],x[index3]))
     #y_total = np.hstack((output1,output3))
     plt.figure(dpi=150)
-    plt.plot(x, data,'.')
+    #plt.plot(x, data,'.')
+    plt.errorbar(x, data, yerr=hinv[i,:], fmt='.')
     #index = np.argsort(x_total)
     plt.plot(x[index1],output1)
     plt.plot(x[index3][x[index3]>0],output3[x[index3]>0], color='g')
