@@ -85,7 +85,8 @@ def hessian(x, *args):
                 H[i,j] = (L1+L2-2*L3)/h**2                
     return H
 
-
+def getPeData(file):
+    return EventID, ChannelID
 def main_Calib(radius, path, fout):
     
     #filename = '/mnt/stage/douwei/Simulation/1t_root/1.5MeV_015/1t_' + radius + '.h5'
@@ -94,35 +95,19 @@ def main_Calib(radius, path, fout):
     h1 = tables.open_file(filename,'r')
     print(filename)
     truthtable = h1.root.GroundTruth
-    EventID = truthtable[:]['EventID']
-    ChannelID = truthtable[:]['ChannelID']
+    EventID = truthtable['EventID'][:]
+    ChannelID = truthtable['ChannelID'][:]
     h1.close()
     
-    # read file series
-    
-    try:
-        for j in np.arange(1,20,1):
-            filename = Energy + '/calib' + radius + '_' + str(j)+ '.h5'           
-            h1 = tables.open_file(filename,'r')
-            print(filename)
-            truthtable = h1.root.GroundTruth
-
-            EventID_tmp = truthtable[:]['EventID']
-            ChannelID_tmp = truthtable[:]['ChannelID']
-            EventID = np.hstack((EventID, EventID_tmp))
-            ChannelID = np.hstack((ChannelID, ChannelID_tmp))
-
-            h1.close()
-    except:
-        j = j - 1
-    
-    total_pe = np.zeros((np.size(PMT_pos[:,0]),max(EventID)))
-    for k in np.arange(1, max(EventID)):
+    # juno eventid begin from 0
+    # get each event pe in order of pmt
+    total_pe = np.zeros((np.size(PMT_pos[:,0]),max(EventID))+1)
+    for k in np.arange(0, max(EventID)+1):
         event_pe = np.zeros(np.size(PMT_pos[:,0]))
         hit = ChannelID[EventID == k]
         tabulate = np.bincount(hit)
         event_pe[0:np.size(tabulate)] = tabulate
-        total_pe[:,k-1] = event_pe
+        total_pe[:,k] = event_pe
     with h5py.File(fout,'w') as out:        
         for cut in np.arange(5,35,5):
             theta0 = np.zeros(cut) # initial value
@@ -135,7 +120,7 @@ def main_Calib(radius, path, fout):
             x = Legendre_coeff(PMT_pos, cut)
             mean = np.mean(total_pe, axis=1)
             args = (total_pe, PMT_pos, cut)
-            predict = [];
+            predict = []
             predict.append(np.exp(np.dot(x, result.x)))
             # predict.append(mean)
             predict = np.transpose(predict)
