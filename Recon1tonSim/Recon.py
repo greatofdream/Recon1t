@@ -14,6 +14,8 @@ from numpy.polynomial import legendre as LG
 from scipy import special
 from scipy.linalg import norm
 import warnings
+import argparse
+
 warnings.filterwarnings('ignore')
 
 # physical constant (if need)
@@ -31,7 +33,7 @@ n = 1.48
 shell_in = 0.85 # Acrylic
 shell_out = 0.8
 #shell = 0.65
-shell = 18000
+shell = 17700
 
 def load_coeff(order):
     h = tables.open_file('../calib/PE_coeff_1t' + order + '.h5','r')
@@ -48,6 +50,7 @@ def load_coeff(order):
     return coeff_pe_in, coeff_pe_out, coeff_time_in, coeff_time_out, cut_pe, fitcut_pe, cut_time, fitcut_time
 
 def r2c(c):
+    # radius to Cartesian
     v = np.zeros(3)
     v[2] = c[0] * np.cos(c[1]) #z
     rho = c[0] * np.sin(c[1])
@@ -70,7 +73,8 @@ def Likelihood(vertex, *args):
     '''
     coeff_time, coeff_pe, PMT_pos, fired_PMT, time_array, pe_array, cut_time, cut_pe, str_s = args
     L1 = Likelihood_PE(vertex, *(coeff_pe, PMT_pos, pe_array, cut_pe, str_s))
-    L2 = Likelihood_Time(vertex, *(coeff_time, PMT_pos, fired_PMT, time_array, cut_time, str_s))
+    #L2 = Likelihood_Time(vertex, *(coeff_time, PMT_pos, fired_PMT, time_array, cut_time, str_s))
+    L2 = 0
     return L1+L2
                          
 def Likelihood_PE(vertex, *args):
@@ -248,13 +252,13 @@ def ReadPMT(geometry):
     data_list = [] 
     while line:
         num = list(map(float,line.split()))
-        data_list.append(num[0:3])
+        data_list.append(num[1:4])
         line = f.readline()
     f.close()
     PMT_pos = np.array(data_list)
     return PMT_pos
 
-def recon(fid, fout, *args):
+def recon(fid, finelec, fout, *args):
     PMT_pos, event_count = args
     # global event_count,shell,PE,time_array,PMT_pos, fired_PMT
     '''
@@ -305,17 +309,36 @@ def recon(fid, fout, *args):
 
     f = uproot.open(fid)
     # a = f['SimTriggerInfo']
-    a = f['evt']
-    for chl, Pkl, xt, yt, zt, Et in zip(a.array("pmtID"),
+    # a = f['evt']
+    # f['ProtonDecay']
+    '''
+    edep_x = a.array('Edep_PromptX')
+    edep_y = a.array('Edep_PromptY'),
+    edep_z = a.array('Edep_PromptZ'),
+    edep = a.array('Edep_Prompt_1000')
+    '''
+    felec = uproot.open(finelec)
+    e = felec['SIMEVT']
+    t = felec['EVTTRUTH']
+    print('{};{}'.format(t.array("pmtId").shape,e.array('evtID')))
+    #for chl, ets,etns, pts, ptns, xt, yt, zt, Et in zip(t.array("pmtId"),
+    for eid, chl, ets,etns, pts, ptns in zip(e.array('evtID'), t.array("pmtId"),
                     #a.array("PEList.HitPosInWindow"),
-                    a.array("hitTime_smear"),
-                    f['ProtonDecay'].array('Edep_PromptX'),
-                    f['ProtonDecay'].array('Edep_PromptY'),
-                    f['ProtonDecay'].array('Edep_PromptZ'),
-                    f['ProtonDecay'].array('Edep_Prompt_1000')):
+                    e.array('EvtTime_Sec'), e.array('EvtTime_NanoSec'),
+                    t.array('pulseHitTime_Sec'), t.array('pulseHitTime_NanoSec'),
+                    ):
+                   #edep_x, edep_y, edep_z, edep):
         pe_array = np.zeros(np.size(PMT_pos[:,1])) # Photons on each PMT (PMT size * 1 vector)
         fired_PMT = np.zeros(0)     # Hit PMT (PMT Seq can be repeated)
         time_array = np.zeros(0, dtype=int)    # Time info (Hit number)
+        time_array = (pts-ets)*10**9 + (ptns-etns)
+        pe_PMT, pe_array1 = np.unique(chl, return_counts=True)
+        pe_array[0:len(pe_array1)] = pe_array1
+        fired_PMT = chl
+        print('fire_PMT:{}'.format(fired_PMT.shape))
+        print('time_array:{}'.format(time_array.shape))
+        print('pe_array:{}'.format(pe_array.shape))
+        '''
         for ch, pk in zip(chl, Pkl):
             try:
                 pe_array[ch] = pe_array[ch]+1
@@ -323,14 +346,15 @@ def recon(fid, fout, *args):
                 fired_PMT = np.hstack((fired_PMT, ch*np.ones(np.size(pk))))
             except:
                 pass
-
+        
         fired_PMT = fired_PMT.astype(int)
+        '''
         # initial result
         result_vertex = np.empty((0,5)) # reconstructed vertex
         
         # Constraints
         E_min = -10
-        E_max = 10
+        E_max = 10000
         tau_min = 0.01
         tau_max = 100
         t0_min = -300
@@ -419,23 +443,31 @@ def recon(fid, fout, *args):
     h5file.close()
 
 # Automatically add multiple root files created a program with max tree size limitation.
-
+'''
 if len(sys.argv)!=5:
     print("Wront arguments!")
     print("Usage: python Recon.py MCFileName[.root] outputFileName[.h5] order")
     sys.exit(1)
-
+'''
+psr = argparse.ArgumentParser()
+psr.add_argument("-o", dest='opt', help="output")
+psr.add_argument("-d", dest='order', help="order")
+psr.add_argument("-t", dest='root', help="root file")
+psr.add_argument("-e", dest='elec', help="elec file")
+psr.add_argument('-g', dest='geo', help="geometry")
+args = psr.parse_args()
 # Read PMT position
 #PMT_pos = ReadPMT()
-geometry = sys.argv[4]
+geometry = args.geo
 PMT_pos = ReadPMT(geometry)
 event_count = 0
 # Reconstruction
-fid = sys.argv[1] # input file .h5
-fout = sys.argv[2] # output file .h5
+fid = args.root # input file .root
+finelec = args.elec
+fout = args.opt # output file .h5
 coeff_pe_in, coeff_pe_out, coeff_time_in, coeff_time_out,\
     cut_pe, fitcut_pe, cut_time, fitcut_time\
-    = load_coeff(sys.argv[3])
+    = load_coeff(args.order)
 
 args = PMT_pos, event_count
-recon(fid, fout, *args)
+recon(fid, finelec, fout, *args)
