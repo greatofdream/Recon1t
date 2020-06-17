@@ -4,25 +4,25 @@ E:=339MeV
 particle:=e-
 #path:=/srv/greatofdream/simnew/newK+/zaxis/E_$(E)/
 #path:=/srv/greatofdream/simnew/$(particle)/zaxis/E_$(E)/
-path:=/junofs/users/junoprotondecay/zhangaq/e/$(particle)/zaxis/E_339MeV/
+path:=/junofs/users/junoprotondecay/zhangaq/e/$(particle)/zaxis/E_339MeV
 upper:=+17000
 lower:=-17000
 radius:=$(shell seq  $(upper) -1000 $(lower))
-save_pe:=coeff_pe_1t_$(E)
-save_time:=coeff_time_1t_$(E)
+save_pe:=coeff_pe_$(E)_det
+save_time:=coeff_time_$(E)_det
 src_pe:=$(radius:%=$(save_pe)/file_%.h5)
 src_time:=$(radius:%=$(save_time)/file_%.h5)
 geometry:=/srv/greatofdream/geometry/PMTPos_Acrylic_with_chimney.csv
 
 all:coeff_pe coeff_time
 
-$(save_pe)/file_%.h5:
+$(save_pe)/file_%.h5: $(path)/%/det_user.root
 	mkdir -p $(save_pe)
-	env TIME="time result\ncmd:%C\nreal %es\nuser %Us \nsys  %Ss \nmemory:%MKB \ncpu %P" time python3 PE_calib/main_calib.py $* $(path) $@ $(geometry) >$@.log 2>&1
+	env TIME="time result\ncmd:%C\nreal %es\nuser %Us \nsys  %Ss \nmemory:%MKB \ncpu %P" time python3 PE_calib/main_calib.py -r $* -o $@ -g $(geometry) $^ >$@.log 2>&1
 
-$(save_time)/file_%.h5:
+$(save_time)/file_%.h5: $(path)/%/det_user.root
 	mkdir -p $(save_time)
-	env TIME="time result\ncmd:%C\nreal %es\nuser %Us \nsys  %Ss \nmemory:%MKB \ncpu %P" time python3 Time_calib/main_calib.py $* $(path) $@ $(geometry) >$@.log 2>&1
+	env TIME="time result\ncmd:%C\nreal %es\nuser %Us \nsys  %Ss \nmemory:%MKB \ncpu %P" time python3 Time_calib/main_calib.py $* $(path)/ $@ $(geometry) >$@.log 2>&1
 
 coeff_pe:$(src_pe)
 	python3 PE_calib/Gather.py ./$(save_pe)/ $(upper) $(lower) 35 >$@.log 2>&1

@@ -1,6 +1,6 @@
 import numpy as np 
 import scipy, h5py
-import tables
+import tables, uproot, argparse
 import sys
 from scipy.optimize import minimize
 from numpy.polynomial import legendre as LG
@@ -86,11 +86,12 @@ def hessian(x, *args):
     return H
 
 def getPeData(file):
+
     return EventID, ChannelID
 def main_Calib(radius, path, fout):
     
     #filename = '/mnt/stage/douwei/Simulation/1t_root/1.5MeV_015/1t_' + radius + '.h5'
-    filename = path + radius + '/wave.h5'
+    filename = path
     # read files by table
     h1 = tables.open_file(filename,'r')
     print(filename)
@@ -139,7 +140,15 @@ def main_Calib(radius, path, fout):
 
 ## read data from calib files
 #f = open(r'./PMT_1t.txt')
-f = open(sys.argv[4])
+psr = argparse.ArgmentParser()
+psr.add_argument("-o", dest='opt', help='output help')
+psr.add_argument('-g', dest='geo', help='geometry')
+psr.add_argument('-r', dest='radius', help='radius')
+psr.add_argument('ipt', help='input')
+psr.add_argument()
+args = psr.parse_args()
+# read geometry
+f = open(args.geo)
 line = f.readline()
 data_list = []
 while line:
@@ -147,7 +156,8 @@ while line:
     data_list.append(num)
     line = f.readline()
 f.close()
-PMT_pos = np.array(data_list)[:,1:4]
 
+PMT_pos = np.array(data_list)[:,1:4]
+radius = np.int(args.radius)
 #cut = 6 # Legend order
-main_Calib(sys.argv[1],sys.argv[2], sys.argv[3])
+main_Calib(radius, args.ipt, args.opt)
