@@ -2,7 +2,8 @@
 order:=$(shell seq 5 5 30)
 E:=339MeV
 particle:=e-
-path:=/junofs/users/junoprotondecay/zhangaq/simnew/$(particle)/zaxis/E_339MeV
+#path:=/junofs/users/junoprotondecay/zhangaq/simnew/$(particle)/zaxis/E_339MeV
+path:=/junofs/users/junoprotondecay/zhangaq/e/$(particle)/zaxis/E_339MeV
 radius:=$(shell seq  17000 -1000 -17000)
 peFiles:=$(radius:%=../coeff_pe_1t_339MeV/file_%.h5)
 timeFiles:=$(radius:%=../coeff_time_1t_339MeV/file_%.h5)
@@ -19,6 +20,8 @@ check/$(particle)/checkpez%.pdf: $(path)/%/wave.h5
 	python3 checkPez.py -f $^ -r $(notdir $*) -g $(geometry) -o $(@) >$@.log 2>&1
 PE.pdf: $(radius:%=$(path)/%/wave.h5)
 	./checkPe.R -o $(@) -- -i $^
+checkpt.pdf: $(radius:%=$(path)/%/wave.root)
+	python3 checkTpe.py $^ -z $(radius) -o $@
 checkgeo.pdf: $(geometry)
 	python3 checkgeometry.py -g $^ -o $(@) >$@.log 2>&1
 .DELETE_ON_ERROR:

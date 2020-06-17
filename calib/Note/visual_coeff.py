@@ -124,7 +124,7 @@ for i in np.arange(np.size(coeff_pe[:,0])):
     # x = ra/0.65
     x = ra/detRadius
     #plt.plot(x, data,'.')
-    plt.errorbar(x, data, yerr=sigma[i,:], fmt='.')
+    plt.errorbar(ra, data, yerr=sigma[i,:], fmt='.')
     index1 = (x<=bd_1) & (x>=-bd_1) & (x!=0)
 
     if(i%2==1):
@@ -158,11 +158,12 @@ for i in np.arange(np.size(coeff_pe[:,0])):
     #y_total = np.hstack((output1,output3))
     #index = np.argsort(x_total)
 
-    plt.plot(x[index1],output1)
-    plt.plot(x[index3][x[index3]>0],output3[x[index3]>0], color='g')
-    plt.plot(x[index3][x[index3]<0],output3[x[index3]<0], color='g')    
+    plt.plot(ra[index1],output1)
+    plt.plot(ra[index3][x[index3]>0],output3[x[index3]>0], color='g')
+    plt.plot(ra[index3][x[index3]<0],output3[x[index3]<0], color='g')  
+    #plt.xticks(ra,ra/1000.0)  
     #plt.text(0,0.5,r'fit: z^1=%2.3f, z^3=%2.3f, z^5=%2.3f, z^7=%2.3f, z^9=%2.3f' % tuple(popt))
-    plt.xlabel('Relative Radius')
+    plt.xlabel('Radius/mm')
     plt.ylabel('Coefficients')
     plt.title('pe:'+str(i)+'-th Legendre coeff')
     plt.legend(['raw','fit_inner','fit_outer'])
