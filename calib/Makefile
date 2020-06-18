@@ -12,8 +12,8 @@ save_pe:=coeff_pe_$(E)_det
 save_time:=coeff_time_$(E)_det
 src_pe:=$(radius:%=$(save_pe)/file_%.h5)
 src_time:=$(radius:%=$(save_time)/file_%.h5)
-geometry:=/srv/greatofdream/geometry/PMTPos_Acrylic_with_chimney.csv
-
+# geometry:=/srv/greatofdream/geometry/PMTPos_Acrylic_with_chimney.csv
+geometry:=/cvmfs/juno.ihep.ac.cn/sl6_amd64_gcc830/Pre-Release/J20v1r0-Pre2/offline/Simulation/DetSimV2/DetSimOptions/data/PMTPos_Acrylic_with_chimney.csv
 all:coeff_pe coeff_time
 
 $(save_pe)/file_%.h5: $(path)/%/det_user.root

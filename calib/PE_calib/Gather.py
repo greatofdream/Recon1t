@@ -31,9 +31,9 @@ def findfile(path, radius, order):
     except:
         d = np.array(0)
     e = eval('np.array(h.root.'+ hinv + '[:])')
-    f = eval('np.array(h.root.'+ chi + '[:])')
+    #f = eval('np.array(h.root.'+ chi + '[:])')
     
-    data.append(np.array(np.array((a,b,c,d,e,f))))
+    data.append(np.array(np.array((a,b,c,d,e))))
     h.close()
     return data
 
@@ -59,12 +59,12 @@ def main(path, upperlimit, lowerlimit, order_max):
             predict = np.hstack((predict,np.array(k[0][2][:,0])))
             #rate = np.hstack((rate,np.array(k[0][3])))
             #hinv = np.hstack((hinv,np.array(k[0][4])))
-            chi = np.hstack((chi,np.array(k[0][5])))
+            # chi = np.hstack((chi,np.array(k[0][5])))
 
         coeff = np.reshape(coeff,(-1,np.size(ra)),order='F')#(order, numOfPmt)
         mean = np.reshape(mean,(-1,np.size(ra)),order='F')
         predict = np.reshape(predict,(-1,np.size(ra)),order='F')
-        chi = np.reshape(chi,(-1,np.size(ra)),order='F')
+        # chi = np.reshape(chi,(-1,np.size(ra)),order='F')
 
         N_max = np.size(coeff[:,0])
         bd_1 = 0.75
@@ -117,7 +117,7 @@ def main(path, upperlimit, lowerlimit, order_max):
             out.create_dataset('coeff', data = coeff)
             out.create_dataset('mean', data = mean)
             out.create_dataset('predict', data = predict)
-            out.create_dataset('chi', data = chi)
+            # out.create_dataset('chi', data = chi)
             out.create_dataset('poly_in', data = k1)
             out.create_dataset('poly_out', data = k2)
     
