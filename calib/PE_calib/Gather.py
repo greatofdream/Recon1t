@@ -78,7 +78,7 @@ def main(path, upperlimit, lowerlimit, order_max):
         for i in np.arange(np.size(coeff[:,0])):
             data = np.nan_to_num(coeff[i,:])
             #x = ra/0.65
-            x = ra/10000
+            x = ra/detRadius
             index1 = (x<=bd_1) & (x>=-bd_1) & (x!=0)
 
             if(i%2==1):
@@ -125,4 +125,5 @@ path = sys.argv[1]
 upperlimit = eval(sys.argv[2])
 lowerlimit = eval(sys.argv[3])
 order_max = eval(sys.argv[4])
+detRadius = 17700
 main(path, upperlimit, lowerlimit, order_max)

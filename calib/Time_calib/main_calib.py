@@ -6,6 +6,7 @@ from scipy.optimize import minimize
 from numpy.polynomial import legendre as LG
 import matplotlib.pyplot as plt
 import os
+import argparse, uproot
 #os.chdir()
 #print(os.getcwd())
 
@@ -104,58 +105,52 @@ def hessian(x, *args):
                 H[i,j] = (L1+L2-2*L3)/h**2                
     return H
 
-
+def getTimeData(filename):
+    print(filename)
+    if filename.endswith('.h5'):
+        # read files by table
+        h1 = tables.open_file(filename,'r')
+        truthtable = h1.root.GroundTruth
+        EventID = truthtable['EventID'][:]
+        ChannelID = truthtable['ChannelID'][:]
+        PETime = truthtable[:]['PETime']
+        h1.close()
+        
+    elif filename.endswith('.root'):
+        f = uproot.open(filename)
+        e = f['evt']
+        # ! 1e7 is estimate value,need to get from file
+        ChannelID = np.zeros(shape=(np.uint(1e7),),dtype=np.uint16)
+        PETime = np.zeros(shape=(np.uint(1e7),))
+        cursor = 0
+        for eid, chl, ht in zip(e.array('evtID'), e.array('pmtID'), e.array('hitTime')):
+            print('pmtID:{},hittime:{}'.format(chl.shape,ht.shape))
+            # select Large pmt 
+            chlLarge = chl[(chl<largeidUp)&(ht<3000)]
+            htLarge = ht[(chl<largeidUp)&(ht<3000)]
+            cursorNext = cursor + chlLarge.shape[0]
+            ChannelID[cursor:cursorNext] = chlLarge
+            PETime[cursor:cursorNext] = htLarge
+            cursor = cursorNext
+            print('processed:{}'.format(eid))
+        ChannelID = np.array(ChannelID[0:cursor])
+        PETime = np.array(PETime[0:cursor])
+    else:
+        print('the format of input file:{} is not correct'.format(filename))
+        exit(1)
+    return ChannelID, PETime
 def main_Calib(radius, path, fout):
     #filename = '/mnt/stage/douwei/Simulation/1t_root/1.5MeV_015/1t_' + radius + '.h5'
-    filename = path + radius + '/wave.h5'
-    # read files by table
-    h1 = tables.open_file(filename,'r')
-    print(filename)
-    truthtable = h1.root.GroundTruth
-    EventID = truthtable[:]['EventID']
-    ChannelID = truthtable[:]['ChannelID']
-    PETime = truthtable[:]['PETime']
-    # photonTime = truthtable[:]['photonTime']
-    '''
-    PulseTime = truthtable[:]['PulseTime']
-    dETime = truthtable[:]['dETime']
-    '''
-    h1.close()
-    
-    # read file series
-    
-    try:
-        for j in np.arange(1,10,1):
-            filename = Energy + '/calib' + radius + '_' + str(j)+ '.h5'           
-            h1 = tables.open_file(filename,'r')
-            print(filename)
-            truthtable = h1.root.GroundTruth
+    filename = path
+    ChannelID, PETime = getTimeData(filename)
+    print('pmtID:{},hittime:{}'.format(ChannelID.shape,PETime.shape))
 
-            EventID_tmp = truthtable[:]['EventID']
-            ChannelID_tmp = truthtable[:]['ChannelID']
-            PETime_tmp = truthtable[:]['PETime']
-            # photonTime_tmp = truthtable[:]['photonTime']
-            PulseTime_tmp = truthtable[:]['PulseTime']
-            dETime_tmp = truthtable[:]['dETime']
-            
-            EventID = np.hstack((EventID, EventID_tmp))
-            ChannelID = np.hstack((ChannelID, ChannelID_tmp))
-            PETime = np.hstack((PETime, PETime_tmp))
-            # photonTime = np.hstack((photonTime, photonTime_tmp))
-            PulseTime = np.hstack((PulseTime, PulseTime_tmp))
-            dETime = np.hstack((dETime, dETime_tmp))
-            
-            h1.close()
-    except:
-        j = j - 1
-    
-    total_pe = np.zeros((np.size(PMT_pos[:,0]),max(EventID)))
-    
     # flight_time = PulseTime - dETime
     flight_time = PETime
+    '''
     ChannelID = ChannelID[~(flight_time==0)]
     flight_time = flight_time[~(flight_time==0)]
-
+    '''
     
     with h5py.File(fout,'w') as out:
         for cut in np.arange(5,35,5):
@@ -168,7 +163,7 @@ def main_Calib(radius, path, fout):
             print(result.x)
             
             x = Legendre_coeff(PMT_pos, cut)
-            predict = [];
+            predict = []
             predict.append(np.dot(x, result.x))
 
             out.create_dataset('coeff' + str(cut), data = record)
@@ -176,7 +171,16 @@ def main_Calib(radius, path, fout):
             out.create_dataset('ch' + str(cut), data = ChannelID)
             out.create_dataset('predict' + str(cut), data = predict)
             out.create_dataset('hinv'+str(cut), data=hess_inv)
-f = open(sys.argv[4])
+psr = argparse.ArgumentParser()
+psr.add_argument("-o", dest='opt', help='output help')
+psr.add_argument('-g', dest='geo', help='geometry')
+psr.add_argument('-r', dest='radius', help='radius')
+psr.add_argument('ipt', help='input')
+
+args = psr.parse_args()
+print(args)
+
+f = open(args.geo)
 line = f.readline()
 data_list = []
 while line:
@@ -184,6 +188,9 @@ while line:
     data_list.append(num)
     line = f.readline()
 f.close()
+largeidUp = 17612
 PMT_pos = np.array(data_list)[:,1:4]
 
-main_Calib(sys.argv[1],sys.argv[2], sys.argv[3])
+radius = np.int(args.radius)
+#cut = 6 # Legend order
+main_Calib(radius, args.ipt, args.opt)

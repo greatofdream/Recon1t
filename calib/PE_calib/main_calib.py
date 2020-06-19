@@ -108,8 +108,8 @@ def getPeData(filename):
         for eid, chl, ht in zip(e.array('evtID'), e.array('pmtID'), e.array('hitTime')):
             print('pmtID:{},hittime:{}'.format(chl.shape,ht.shape))
             # select Large pmt 
-            chlLarge = chl[chl<largeidUp]
-            htLarge = ht[chl<largeidUp]
+            chlLarge = chl[(chl<largeidUp)&(ht<3000)]
+            htLarge = ht[(chl<largeidUp)&(ht<3000)]
             c, tempStore = np.unique(chlLarge, return_counts=True)
             print('counts:{},max:{}'.format(tempStore.shape, np.max(c)))
             total_pe[0:np.size(tempStore), eid] = tempStore
