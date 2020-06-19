@@ -37,7 +37,7 @@ def LoadDataPE(path, radius, order):
     predict = 'predict' +str(order)
     rate = 'rate' + str(order)
     hinv = 'hinv' + str(order)
-    chi = 'chi' + str(order)
+    #chi = 'chi' + str(order)
     
     a = np.array(h.root[coeff][:])
     b = np.array(h.root[mean][:])
@@ -47,9 +47,9 @@ def LoadDataPE(path, radius, order):
     except:
         d = np.array(0)
     e = np.array(h.root[hinv][:])
-    f = np.array(h.root[chi][:])
+    #f = np.array(h.root[chi][:])
     
-    data.append(np.array(np.array((a,b,c,d,e,f))))
+    data.append(np.array(np.array((a,b,c,d,e))))
     return data
 
 
@@ -67,7 +67,6 @@ def LoadFileTime(path, radius, order):
     return (a, e)
 
     ## gather the data
-path = '../coeff_pe_1t_339MeV/'
 #ra = np.arange(+0.651, -0.65, -0.01)
 #ra = np.arange(16000, -16001, -1000)
 #ra = np.append(np.arange(16000,6001,-1000),(np.arange(-5000,-16001,-1000)))
@@ -94,7 +93,7 @@ for radius,filename in zip(ra, peFiles):
     #rate = np.hstack((rate,np.array(k[0][3])))
     #hinv = np.hstack((hinv,np.array(k[0][4])))
     sigma = np.hstack((sigma,np.sqrt(-np.diagonal(k[0][4]))))
-    chi = np.hstack((chi,np.array(k[0][5])))
+    # chi = np.hstack((chi,np.array(k[0][5])))
 #print('coeff_pe value')
 #print(coeff_pe)
 coeff_pe = np.reshape(coeff_pe,(-1,np.size(ra)),order='F')
@@ -102,11 +101,9 @@ coeff_pe = np.reshape(coeff_pe,(-1,np.size(ra)),order='F')
 
 mean = np.reshape(mean,(-1,np.size(ra)),order='F')
 predict = np.reshape(predict,(-1,np.size(ra)),order='F')
-chi = np.reshape(chi,(-1,np.size(ra)),order='F')
+# chi = np.reshape(chi,(-1,np.size(ra)),order='F')
 sigma = np.reshape(sigma, (-1,np.size(ra)),order='F')
 #sigma = coeff_pe*sigmaFactor
-
-
 
 pdf = PdfPages(args.opt)
 #ra = np.arange(+0.651, -0.65, -0.01)
@@ -171,10 +168,9 @@ for i in np.arange(np.size(coeff_pe[:,0])):
     #plt.show()
     plt.close()
 
-order = 10
-coeff_time = []
-path = '../coeff_time_1t_339MeV/'
 
+coeff_time = []
+hinv=[]
 for radius,filename in zip(ra,timeFiles):
     # str_radius = '%+.2f' % radius
     str_radius = '{}'.format(radius)
