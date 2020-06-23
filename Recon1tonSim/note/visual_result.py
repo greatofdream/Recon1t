@@ -16,27 +16,84 @@ args = psr.parse_args()
 zaxis = np.array([np.int(i) for i in args.z])
 
 pdf = PdfPages(args.opt)
-for z, filename, truthfile in zip(zaxis, args.ipt, args.pos):
+EerrorMean = np.zeros(zaxis.shape)
+EerrorStd = np.zeros(zaxis.shape)
+XerrorMean = np.zeros(zaxis.shape)
+YerrorMean = np.zeros(zaxis.shape)
+ZerrorMean = np.zeros(zaxis.shape)
+RerrorMean = np.zeros(zaxis.shape)
+RerrorStd = np.zeros(zaxis.shape)
+for i, (z, filename, truthfile) in enumerate(zip(zaxis, args.ipt, args.pos)):
     print('{}'.format(filename))
     ftruth = uproot.open(truthfile)
     e = ftruth['prmtrkdep']
     with h5py.File(filename, 'r') as ipt:
-        fig = plt.figure(figsize=(1000,500))
-        plt.subplot(1,2,1)
+        fig = plt.figure()
+        
         print(e.array('edep'))
         print(ipt['Recon']['E_sph_in'][:])
         print(e.array('edepX'))
         print(ipt['Recon']['x_sph_in'][:])
-        plt.hist(e.array('edep')-ipt['Recon']['E_sph_in'][:])
+        print(ipt['Recon']['x_sph_out'][:])
+        
+        L_in = ipt['Recon']['Likelihood_in'][:]
+        L_out = ipt['Recon']['Likelihood_out'][:]
+
+        recon_pos = np.zeros((np.size(L_in), 3))
+        recon_E = np.zeros((np.size(L_in,)))
+
+        in_index = L_in < L_out
+        recon_pos[in_index, 0] = ipt['Recon']['x_sph_in'][in_index]
+        recon_pos[in_index, 1] = ipt['Recon']['y_sph_in'][in_index]
+        recon_pos[in_index, 2] = ipt['Recon']['z_sph_in'][in_index]
+        recon_E[in_index] = ipt['Recon']['E_sph_in'][in_index]
+
+        recon_pos[~in_index, 0] = ipt['Recon']['x_sph_out'][~in_index]
+        recon_pos[~in_index, 0] = ipt['Recon']['y_sph_out'][~in_index]
+        recon_pos[~in_index, 0] = ipt['Recon']['z_sph_out'][~in_index]
+        recon_E[~in_index] = ipt['Recon']['E_sph_out'][~in_index]
+
+        truth_x = np.array([i[0] for i in e.array('edepX')])
+        truth_y = np.array([i[0] for i in e.array('edepX')])
+        truth_z = np.array([i[0] for i in e.array('edepX')])
+        truth_E = np.array([i[0] for i in e.array('edep')])
+        plt.subplot(1,1,1)
+        plt.hist(recon_E)
+        plt.axvline(np.average(e.array('edep')), color='green')
         plt.title('distribution of E-error;z:{}'.format(z))
-        plt.xlabel('E-error')
-        plt.ylabel('Entries')
-        plt.subplot(1,2,2)
-        plt.title('distribution of R-error;z:{}'.format(z))
-        plt.hist(np.sqrt(e.array('edepX')**2+e.array('edepX')**2+e.array('edepX')**2)-
-                    np.sqrt(ipt['Recon']['x_sph_in'][:]**2+ipt['Recon']['y_sph_in'][:]**2+ipt['Recon']['z_sph_in'][:]**2))
-        plt.xlabel('R-error')
+        plt.xlabel('recon-E/MeV')
         plt.ylabel('Entries')
         pdf.savefig()
         plt.close()
+
+        plt.subplot(1,1,1)
+        plt.title('distribution of R;z:{}'.format(z))
+        print(np.sqrt(recon_pos[:,0]**2+recon_pos[:,1]**2+recon_pos[:,2]**2))
+        plt.hist(np.sqrt(recon_pos[:,0]**2+recon_pos[:,1]**2+recon_pos[:,2]**2))
+        print(np.sqrt(e.array('edepX')**2+e.array('edepY')**2+e.array('edepZ')**2))
+        plt.axvline(np.average(np.sqrt(e.array('edepX')**2+e.array('edepY')**2+e.array('edepZ')**2)), color='green')
+        plt.xlabel('R/mm')
+        plt.ylabel('Entries')
+        pdf.savefig()
+        plt.close()
+        EerrorMean[i] = np.average(recon_E - truth_E)
+        EerrorStd[i] = np.std(recon_E - truth_E)
+        
+        RerrorMean[i] = np.average(np.sqrt(recon_pos[:,0]**2+recon_pos[:,1]**2+recon_pos[:,2]**2) - np.sqrt(truth_x**2+truth_y**2+truth_z**2))
+        RerrorStd[i] = np.std(np.sqrt(recon_pos[:,0]**2+recon_pos[:,1]**2+recon_pos[:,2]**2) - np.sqrt(truth_x**2+truth_y**2+truth_z**2))
+plt.subplot(1, 1, 1)
+
+plt.title('Eerror-z')
+plt.errorbar(zaxis, EerrorMean, yerr=EerrorStd, fmt='.')
+plt.xlabel('z/mm')
+plt.ylabel('Eerror')
+pdf.savefig()
+plt.close()
+plt.subplot(1,1,1)
+plt.title('Rerror-z')
+plt.errorbar(zaxis, RerrorMean, yerr=RerrorStd, fmt='.')
+plt.xlabel('z/mm')
+plt.ylabel('Rerror')
+pdf.savefig()
+plt.close()
 pdf.close()
